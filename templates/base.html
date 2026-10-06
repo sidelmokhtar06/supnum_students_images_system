@@ -1,0 +1,49 @@
+{% from "icons.html" import icon %}
+<!doctype html>
+<html lang="{{ lang|default('fr') }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SupNum – Photos étudiants</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Inter:wght@400;600&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #13235b; --blue: #2f5bea; --sky: #e8eeff; --sun: #ffb020; --pink: #ff5d8f;
+      --green: #1fb57a; --red: #e5484d; --ink: #1b1f2e; --muted: #6b7290; --card: #fff; --bg: #f3f5fb;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Inter, Tajawal, system-ui, sans-serif; background: var(--bg); margin: 0; color: var(--ink); min-height: 100vh;
+           background-image: radial-gradient(circle at 10% 0%, #dfe6ff 0, transparent 40%), radial-gradient(circle at 100% 100%, #ffe9c7 0, transparent 40%); }
+    h1, h2, .brand { font-family: Fredoka, Tajawal, Inter, sans-serif; }
+    .icon { vertical-align: -4px; flex-shrink: 0; }
+    .wrap { max-width: 460px; margin: 0 auto; padding: 24px 16px 48px; }
+    .card { background: var(--card); padding: 28px 24px; border-radius: 20px; box-shadow: 0 10px 30px #13235b14; }
+    .brand { display: flex; align-items: center; gap: 10px; justify-content: center; color: var(--navy); font-size: 1.5rem; font-weight: 700; margin-bottom: 18px; }
+    .brand .logo { background: var(--navy); color: #fff; border-radius: 12px; padding: 7px; display: grid; }
+    h1 { font-size: 1.35rem; margin: 0 0 6px; color: var(--navy); }
+    .sub { color: var(--muted); margin: 0 0 20px; font-size: .95rem; }
+    label.field { display: block; margin: 16px 0 8px; font-weight: 600; font-size: .9rem; }
+    .input { position: relative; }
+    .input .icon { position: absolute; inset-inline-start: 12px; top: 13px; color: var(--muted); }
+    .input input { width: 100%; padding: 12px; padding-inline-start: 42px; font-size: 1rem; border: 2px solid #e2e6f3; border-radius: 12px; outline: none; transition: border-color .2s; font-family: inherit; }
+    .input input:focus { border-color: var(--blue); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 16px; border: 0; border-radius: 12px;
+           background: var(--blue); color: #fff; font: 600 .95rem Inter, sans-serif; cursor: pointer; text-decoration: none; transition: transform .1s, filter .2s; }
+    .btn:hover { filter: brightness(1.08); } .btn:active { transform: scale(.96); }
+    .btn.ghost { background: var(--sky); color: var(--navy); }
+    .btn.danger { background: #fdecec; color: var(--red); }
+    .btn.block { width: 100%; padding: 14px; font-size: 1.05rem; }
+    .btn.icon-only { padding: 9px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row > * { flex: 1; }
+    .msg { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; margin-bottom: 16px; font-weight: 600; animation: pop .4s; }
+    .msg.ok { background: #dcf7ea; color: #0f7a51; } .msg.error { background: #fde7e7; color: #b42318; }
+    @keyframes pop { from { transform: scale(.9); opacity: 0; } }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block body %}{% endblock %}
+</body>
+</html>

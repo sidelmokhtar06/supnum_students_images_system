@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% block head %}
+<style>
+  .admin { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+  .top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .top .brand { margin: 0; }
+  .count { background: var(--sun); color: var(--navy); border-radius: 999px; padding: 2px 10px; font-size: .9rem; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; }
+  .toolbar .input { flex: 1; min-width: 220px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; margin-top: 18px; }
+  .item { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 6px 18px #13235b10; transition: transform .15s; }
+  .item:hover { transform: translateY(-3px); }
+  .item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--sky); }
+  .item .meta { padding: 10px; display: flex; align-items: center; gap: 6px; }
+  .item .name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; color: var(--navy); }
+  .item form { display: contents; }
+  .item .who { flex: 1; min-width: 0; }
+  .item .date { font-size: .75rem; color: var(--muted); }
+  select { padding: 10px 12px; border: 2px solid #e2e6f3; border-radius: 12px; font: inherit; background: #fff; }
+  .grid .item { animation: cardIn .5s cubic-bezier(.3,1.4,.5,1) both; }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(30px) scale(.9); } }
+  .item.bye { animation: bye .45s ease-in forwards; }
+  @keyframes bye { to { opacity: 0; transform: scale(.3) rotate(-20deg); } }
+  .item img { transition: transform .3s; } .item:hover img { transform: scale(1.06); }
+  .top .brand .logo { animation: wiggle 1s .3s; }
+  .count { display: inline-block; animation: pop .5s .4s both; }
+  .msg { animation: pop .4s, slideAway .4s 4s forwards; }
+  @keyframes slideAway { to { opacity: 0; transform: translateY(-10px); height: 0; padding: 0; margin: 0; } }
+  @keyframes wiggle { 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; } }
+  .empty { text-align: center; color: var(--muted); padding: 60px 0; }
+</style>
+{% endblock %}
+{% block body %}
+<div class="admin">
+  <div class="top">
+    <div class="brand">
+      <span class="logo">{{ icon("grad", 24) }}</span>Photos <span class="count"><span id="count">{{ items|length }}</span></span>
+    </div>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_all') }}">{{ icon("download") }} Tout télécharger</a>
+      <a class="btn ghost" href="{{ url_for('logout') }}">{{ icon("logout") }} Déconnexion</a>
+    </div>
+  </div>
+
+  {% for cat, m in get_flashed_messages(with_categories=true) %}
+    <div class="msg {{ cat }}">{{ icon("check" if cat == "ok" else "alert") }} {{ m }}</div>
+  {% endfor %}
+
+  <div class="toolbar">
+    <div class="input">{{ icon("search") }}<input type="search" id="q" placeholder="Rechercher un matricule…" oninput="filter(this.value)"></div>
+    <select onchange="sortBy(this.value)" aria-label="Trier">
+      <option value="date">Plus récentes d'abord</option>
+      <option value="old">Plus anciennes d'abord</option>
+      <option value="m">Par matricule</option>
+    </select>
+  </div>
+
+  {% if items %}
+  <div class="grid">
+    {% for name, t in items %}
+    {% set m = name.rsplit('.', 1)[0] %}
+    <div class="item" data-m="{{ m }}" data-t="{{ t }}">
+      <a href="{{ url_for('photo', name=name) }}" target="_blank"><img src="{{ url_for('photo', name=name) }}" alt="{{ name }}" loading="lazy"></a>
+      <div class="meta">
+        <div class="who"><div class="name">{{ m }}</div><div class="date">{{ datetime.fromtimestamp(t).strftime("%d/%m à %H:%M") }}</div></div>
+        <a class="btn ghost icon-only" title="Télécharger" href="{{ url_for('photo', name=name, dl=1) }}">{{ icon("download", 16) }}</a>
+        <form method="post" action="{{ url_for('rename') }}" onsubmit="return askName(this)">
+          <input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="matricule">
+          <button class="btn ghost icon-only" title="Renommer">{{ icon("pencil", 16) }}</button>
+        </form>
+        <form method="post" action="{{ url_for('delete') }}" onsubmit="return bye(this, '{{ m }}')">
+          <input type="hidden" name="name" value="{{ name }}">
+          <button class="btn danger icon-only" title="Supprimer">{{ icon("trash", 16) }}</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">{{ icon("image", 48) }}<p>Aucune photo pour l'instant.</p></div>
+  {% endif %}
+</div>
+<script>
+  function filter(q) {
+    q = q.trim().toUpperCase();
+    document.querySelectorAll('.item').forEach(el => el.hidden = !el.dataset.m.includes(q));
+  }
+  // Cards pop in one after another, the counter counts up.
+  document.querySelectorAll('.grid .item').forEach((el, k) => el.style.animationDelay = Math.min(k * 0.04, 1) + 's');
+  const count = document.getElementById('count'), total = +count.textContent;
+  for (let k = 0; k <= 20; k++) setTimeout(() => count.textContent = Math.round(total * k / 20), k * 30);
+
+  // Delete: the card spins away, then the form is sent.
+  function bye(form, m) {
+    if (!confirm('Supprimer la photo de ' + m + ' ?')) return false;
+    form.closest('.item').classList.add('bye');
+    setTimeout(() => form.submit(), 420);
+    return false;
+  }
+
+  function sortBy(how) {
+    const grid = document.querySelector('.grid');
+    if (!grid) return;
+    const items = [...grid.children];
+    items.sort((a, b) => how === 'm' ? a.dataset.m.localeCompare(b.dataset.m)
+                       : how === 'old' ? a.dataset.t - b.dataset.t : b.dataset.t - a.dataset.t);
+    grid.append(...items);
+  }
+  function askName(form) {
+    const current = form.closest('.item').dataset.m;
+    const v = prompt('Nouveau matricule pour ' + current + ' :', current);
+    if (!v || v.trim().toUpperCase() === current) return false;
+    form.matricule.value = v.trim();
+    return true;
+  }
+</script>
+{% endblock %}
